@@ -104,6 +104,7 @@ function global_build_sequence takes nothing returns nothing
       call BuildItem(1, uSCROLL_OF_SPEED, 70)
       call BuildItem(1, uSCROLL_OF_PROTECTION, 40)
       call BuildItem(1, uPOTION_OF_LESSER_INVULNERBILITY, 50)
+      call BuildItem(1, uBOOTS_OF_SPEED, 50)
       if hero[1] == uBLADE_MASTER then
             call BuildItem(1, uLESSER_CLARITY_POTION, 70)
       endif

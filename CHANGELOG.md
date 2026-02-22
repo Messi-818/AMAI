@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ### Changed
 - Additional peons needed for an expansion will start to be trained early.
+- Added boots of speed to all strategies.
+- Undead will buy an orb of corruption if you have a lich.
 
 ### Fixed
 - Ensure all peons for pre-existing expansions are trained before expanding again.

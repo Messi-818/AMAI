@@ -92,6 +92,7 @@ function global_build_sequence takes nothing returns nothing
     call BuildItem(1, uPOTION_OF_LESSER_INVULNERBILITY, 70)
     call BuildItem(1, uM_TOWN_PORTAL, 100)
     call BuildItem(1, uMOONSTONE, 45)
+    call BuildItem(1, uBOOTS_OF_SPEED, 50)
     if tier >= 2 then
       call BuildItem(1, uHEALING_POTION, 80)
       call BuildItem(1, uTOWN_PORTAL, 180)

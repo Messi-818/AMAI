@@ -92,6 +92,7 @@ function global_build_sequence takes nothing returns nothing
       call BuildItem(1, uSCROLL_OF_PROTECTION, 30)
       call BuildItem(1, uPOTION_OF_LESSER_INVULNERBILITY, 70)
       call BuildItem(1, uMOONSTONE, 45)
+      call BuildItem(1, uBOOTS_OF_SPEED, 50)
       if tier == 1 then
 	call BuildItem(1, uM_TOWN_PORTAL, 100)
       endif
@@ -99,8 +100,6 @@ function global_build_sequence takes nothing returns nothing
         call BuildItem(1, uHEALING_POTION, 70)
         call BuildItem(1, uTOWN_PORTAL, 150)
         call BuildItem(1, uSTAFF_OF_PRESERVATION, 40)
-      elseif hero[1]==uWARDEN then
-        call BuildItem(1, uBOOTS_OF_SPEED, 50)
       endif
 
     // DYNAMIC

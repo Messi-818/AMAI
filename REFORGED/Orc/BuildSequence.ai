@@ -102,6 +102,7 @@ function global_build_sequence takes nothing returns nothing
     call BuildItem(1, uM_SCROLL_OF_HEALING, 55)
     call BuildItem(1, uSCROLL_OF_SPEED, 40)
     call BuildItem(1, uPOTION_OF_LESSER_INVULNERBILITY, 50)
+    call BuildItem(1, uBOOTS_OF_SPEED, 50)
     call BuildItem(1, uLESSER_CLARITY_POTION, 35)
     call BuildItem(1, uM_TOWN_PORTAL, 100)
     if tier >= 2 then
