@@ -2,8 +2,8 @@
 //  global builds
 //============================================================================
 function global_init_strategy takes nothing returns nothing
-    call SetTierBlock(1, 0.75, 60, true)
-    call SetTierBlock(2, 0.75, 90, true)
+    call SetTierBlock(1, 0.75, 60, false)
+    call SetTierBlock(2, 0.75, 90, false)
     if not IsMapFlagSet(MAP_RANDOM_HERO) then
       call AddBlock(1, uHUMAN_ALTAR, false, 0, uARCANE_VAULT, 16)
       call AddBlock(1, uHUMAN_ALTAR, false, 0, uHOUSE, 16)
