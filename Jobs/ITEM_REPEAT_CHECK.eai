@@ -8,10 +8,10 @@ function ItemTypeCheck takes unit u , item it , integer t returns boolean
     return false
   endif
   loop
+    set t = t + 1
     exitwhen t > 5 or c < 0
-    set t = t + 1  // just need check remaining Slot
     set c = GetItemTypeId(UnitItemInSlot(u, t))
-    if c != 0 then  // check same item and same ability's item
+    if c != 0 then
       if c == i then
         set c = -1
       #INCLUDETABLE <$VER$\ItemCheck.txt> #EFR #COND '%2' ne '0' and '%3' ne '0'
@@ -29,7 +29,7 @@ function ItemTypeCheck takes unit u , item it , integer t returns boolean
       endif
     endif
   endloop
-  if false then  // check repeat ability
+  if false then
   #INCLUDETABLE <$VER$\ItemCheck.txt> #EFR #COND '%8' ne '0'
   elseif i == '%1' and (c < 0 or GetUnitAbilityLevel(u,'%4') > 0 or GetUnitAbilityLevel(u,'%5') > 0 or GetUnitAbilityLevel(u,'%6') > 0 or GetUnitAbilityLevel(u,'%7') > 0 or GetUnitAbilityLevel(u,'%8') > 0 ) then
     return true
@@ -51,7 +51,7 @@ function ItemTypeCheck takes unit u , item it , integer t returns boolean
     return true
   #ENDINCLUDE
   elseif c < 0 then
-    if false then  // check repeat item
+    if false then
     #INCLUDETABLE <$VER$\ItemCheck.txt> #EFR #COND '%4' eq '0'
     elseif i == '%1' then
       return true
@@ -69,25 +69,25 @@ function CheckItem takes nothing returns nothing
   local unit u = null
   local unit array tempu
   call GroupEnumUnitsOfPlayer(g, ai_player, null)
-  set g = SelectUnittype(g, UNIT_TYPE_HERO, true)  // Prevent hero more than 3 , no use hero_unit[i]
+  set g = SelectUnittype(g, UNIT_TYPE_HERO, true)
   loop
     set u = FirstOfGroup(g)
     exitwhen u == null
     if UnitAlive(u) and IsStandardUnit(u) and not IsUnitBuying(u) then
-      set tempu[i] = u  // no attack , no need check IsUnitInvisible
+      set tempu[i] = u
       set i = i + 1
     endif
     call GroupRemoveUnit(g,u)
   endloop
   call DestroyGroup(g)
   set g = null
-  if i > 2 then  // if no or just one hero , cannot move item
+  if i > 2 then
     set c = i - 1
     set i = 1
     loop
       set u = tempu[i]
       exitwhen u == null
-      if GetSlotsFreeOnUnit(u) < 6 then  // have item
+      if GetSlotsFreeOnUnit(u) < 6 then
         set t = 0
         loop
           exitwhen t > 5
@@ -96,11 +96,11 @@ function CheckItem takes nothing returns nothing
             if tempu[0] != u and GetSlotsFreeOnUnit(tempu[0]) > 0 and DistanceBetweenUnits(tempu[0],u) <= 1600 then
               call RemoveGuardPosition(u)
               call RemoveGuardPosition(tempu[0])
-              call IssueTargetOrder(tempu[0], "move", u)  // two hero near
+              call IssueTargetOrder(tempu[0], "move", u)
               call UnitDropItemTarget(u,UnitItemInSlot(u,t),tempu[0])
               call TQAddUnitJob(10, RESET_GUARD_POSITION, 80, tempu[0])
               call TQAddUnitJob(10, RESET_GUARD_POSITION, 80, u)
-              set t = 5  // once move one item
+              set t = 5
             endif
           endif
           set t = t + 1
@@ -118,7 +118,7 @@ endfunction
 
 function ItemRepeatCheck takes nothing returns nothing
   if not town_threatened and not CaptainRetreating() and not CaptainInCombat(true) then
-    call CheckItem()  // Prevent the map set unit die will drop item , so no judge CreepsOnMap
+    call CheckItem()
   endif
   call TQAddJob(160, ITEM_REPEAT_CHECK, 0)
 endfunction
