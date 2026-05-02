@@ -149,6 +149,7 @@ endfunction
 function FocusFire takes unit u returns nothing
   local group t = CreateGroup()
   local group temp_focus = CreateGroup()
+  local group gargs = SelectById(temp_focus, old_id[uGARGOYLE], true)
   
   call GroupEnumUnitsInRange(t, GetUnitX(u), GetUnitY(u), focus_fire_ranged_dist, null)
   set t = SelectUnittype(t, UNIT_TYPE_RANGED_ATTACKER, true)
@@ -199,9 +200,13 @@ function FocusFire takes unit u returns nothing
       set focus_fire_unit = u
     endif
     call CreateDebugTag("FF: here:" + Int2Str(BlzGroupGetSize(temp_focus)), 10, u, 1.00, 0.80)
-    call FocusGroupRemoveGuard(temp_focus) // Not currently fully controlling focus fire 
+    call FocusGroupRemoveGuard(temp_focus) // Not currently fully controlling focus fire
+    if FirstOfGroup(gargs) != null then
+        call GroupImmediateOrder(gargs, "gargoyleaironly")
+    endif
+    call DestroyGroup(gargs)
+    set gargs = null
     call GroupTargetOrder(temp_focus, "attack", u)
-    set focus_fire_group = GroupAddGroup(focus_fire_group, temp_focus) // Finally add units to group to say they have focus fired
   endif
   set t = null
   call DestroyGroup(temp_focus)
@@ -224,6 +229,7 @@ function FocusEnemyUnitsNearGroup takes group g returns nothing
   local real unit_life = 0
   local real x = 0
   local real y = 0
+  local boolean unit_disabled = false
   call GroupClear(micro_ranged_group)
   call GroupClear(micro_enemymelee_group)
   call MoveLocation(enemy_melee_loc, 0,0)
@@ -252,6 +258,19 @@ function FocusEnemyUnitsNearGroup takes group g returns nothing
             set hero_min_health_unit = u
           endif
         else
+          if GetPlayerRace(ai_player) != RACE_NIGHTELF then
+              if IsUnitType(u, UNIT_TYPE_HERO) == false and IsUnitType(u, UNIT_TYPE_STRUCTURE) == false then
+                  if GetUnitMoveSpeed(u) < 100 or IsUnitPaused(u) or UnitIsSleeping(u) then
+                      set unit_disabled = true
+                  endif
+              endif
+              if unit_disabled and GetUnitState(u, UNIT_STATE_LIFE) < GetUnitState(u, UNIT_STATE_MAX_LIFE) * 0.9 then
+                  if GetUnitState(u, UNIT_STATE_LIFE) > GetUnitState(u, UNIT_STATE_MAX_LIFE) * 0.4 then
+                      set min_health = GetUnitState(u, UNIT_STATE_LIFE)
+                      set min_health_unit = u
+                  endif
+              endif
+          endif
           if unit_life < min_health and not UnitIsSleeping(u) and (unit_life < GetUnitState(u, UNIT_STATE_MAX_LIFE) or IsUnitType(u, UNIT_TYPE_MELEE_ATTACKER) or IsUnitType(u, UNIT_TYPE_RANGED_ATTACKER) or IsUnitType(u, UNIT_TYPE_TOWNHALL)) then
             set min_health = unit_life
             set min_health_unit = u
