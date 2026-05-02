@@ -12142,6 +12142,7 @@ function OneBuildLoopAM takes nothing returns nothing
     local integer tracedsome = 0
     local integer tracednoresources = 0
     local integer tracedall = 0
+    local integer mine_idx
     local string logtype = ""
     local boolean blocktierup = false
     local boolean expablocktier = false
@@ -12152,6 +12153,16 @@ function OneBuildLoopAM takes nothing returns nothing
     call SetBuildFree()
     call FarmBuilder()
     call PeonBuilder()
+    if not race_manual_loading and not race_uses_mine_expansion then
+      set mine_idx = 1
+      loop
+           exitwhen mine_idx >= own_town_num or mine_idx > 10
+          if mine_idx != home_town and TownHasMine(mine_idx) and TownCountTown(racial_expansion, mine_idx) > 0 then
+              call HarvestGold(mine_idx, 5)
+          endif
+          set mine_idx = mine_idx + 1
+      endloop
+   endif
     // Zeppelin builder
     if GetGold() > 600 and GetWood() > 360 then
       if (water_expansion_list_length > 0) then
@@ -12667,30 +12678,27 @@ function CommonSleepUntilTargetDeadAM takes unit target, boolean iscreeping, boo
   local integer gen_stuck_counter = 0
   local real gen_last_dist = -1
   local real gen_cur_dist = 0
-  //local group g = null
+  local integer opCounter = 0
 
   set lastcaptainx = GetUnitX(target)
   set lastcaptainy = GetUnitY(target)
 
   loop
-    //call Trace("SleepExitThreat:" + B2S(town_threat_break and town_threatened and not desperation_assault))
+    set opCounter = opCounter + 1
+    if opCounter > 2000 then
+        call TriggerSleepAction(0.0)
+        set opCounter = 0
+    endif
+
     exitwhen town_threat_break and town_threatened and not desperation_assault
-    //call Trace("SleepExitBreak:" + B2S(break_attack and not desperation_assault))
     exitwhen break_attack and not desperation_assault
-    //exitwhen captain_flee and CaptainRetreating()
-    //call Trace("SleepExitFlee:" + B2S(isfleeing and (CaptainRetreating() or CaptainIsHome()) and not desperation_assault))
     exitwhen isfleeing and not desperation_assault
-    //call Trace("SleepExitEmpty:" + B2S(CaptainIsEmpty() and not desperation_assault))
     exitwhen CaptainIsEmpty() and not desperation_assault
-    //if (c_ally_total > 0 and GetAllianceTarget() != null) then // If alliance target exists this overrides hardcoded attack controls regardless of unit you pass, so reconfigure attack to be aware of this
-    //  set target = GetAllianceTarget()
-    //endif
-    //call Trace("SleepExitNull:" + B2S(target == null))
-    exitwhen target == null // Fail safe
-    //call Trace("SleepExitInvalid:" + B2S(IsPlayerAlly(ai_player, GetOwningPlayer(target)) or not UnitAlive(target) or (IsUnitInvisible(target, ai_player))))
+    exitwhen target == null
     exitwhen not UnitAlive(target)
     exitwhen IsPlayerAlly(ai_player, GetOwningPlayer(target))
     exitwhen IsUnitInvisibleAM(target, ai_player)
+
     if attacking_expansion and current_expansion != null and main_army >= 0 and army_loc[main_army] != null and not CaptainInCombat(true) then
       set target_loc = GetUnitLoc(target)
       set cur_dist = DistanceBetweenPoints_dd(army_loc[main_army], target_loc)
@@ -12704,7 +12712,7 @@ function CommonSleepUntilTargetDeadAM takes unit target, boolean iscreeping, boo
       set last_dist = cur_dist
       if stuck_counter > 10 then
         call Trace("Expansion attack stuck, marking bad expansion")
-        call MarkBadExpansion(current_expansion) // Mark land expansion as bad, before adding to water expansions
+        call MarkBadExpansion(current_expansion)
         if not IsWaterExpansion(current_expansion) then
           call AddWaterExpansion(current_expansion, DistanceBetweenPoints_kd(home_location, GetUnitLoc(current_expansion)))
         endif
@@ -12714,6 +12722,7 @@ function CommonSleepUntilTargetDeadAM takes unit target, boolean iscreeping, boo
         return
       endif
     endif
+
     if not attacking_expansion and main_army >= 0 and army_loc[main_army] != null and not CaptainInCombat(true) and not CaptainAtGoal() and not CaptainIsHome() then
       set target_loc = GetUnitLoc(target)
       set gen_cur_dist = DistanceBetweenPoints_dd(army_loc[main_army], target_loc)
@@ -12731,60 +12740,32 @@ function CommonSleepUntilTargetDeadAM takes unit target, boolean iscreeping, boo
         return
       endif
     endif
-    //if IsPlayerAlly(ai_player, GetOwningPlayer(target)) or not UnitAlive(target) or (UnitInvis(target) and not IsUnitDetected(target, ai_player)) then
-    //  set g = CreateGroup()
-    //  call GroupEnumUnitsInRange(g,GetUnitX(target), GetUnitY(target),battle_radius,null)
-    //  set g = SelectByAlive(g,true)
-    //  set g = SelectByEnemy(g,ai_player, true)
-    //  if not UnitAlive(target) or UnitInvis(target) then
-    //    set g = SelectByVisible(g,ai_player,true)  // to find enemies that ai has noticed
-    //  endif
-    //  if iscreeping then
-    //    set g = SelectByPlayer(g, Player(PLAYER_NEUTRAL_AGGRESSIVE), true)  // if creeping and unit invisible see if any other creeps targetable
-    //  endif
-    //  set target = FirstOfGroup(g)
-    //  call DestroyGroup(g)
-    //endif
-    //exitwhen target == null
-    //if not iscreeping then
-       //	exitwhen GetLocationNonCreepStrength(unitx, unity, battle_radius) <= 0 and not UnitAlive(target) and GetLocationEnemyStrength(unitx, unity, battle_radius, true) <= 0 // enemies are dead and target dead
-    //else
-      //call Trace("Units, Creeps: " + Int2Str(GetLocationNonCreepStrength(unitx, unity, battle_radius)) + "," + Int2Str(GetLocationCreepStrength(unitx, unity, 500)))
-    //	exitwhen GetLocationNonCreepStrength(unitx, unity, battle_radius) <= 0 and not UnitAlive(target) and GetLocationCreepStrength(unitx, unity, 500) <= 0			
-    //endif
+
     if c_ally_total > 0 and CheckAttackWait(target) and ally_override then
       set ally_found = true
-    endif  
+    endif
     set dist = DistanceBetweenPoints_kd(ally_loc, GetUnitLoc(target))
     if ally_found and dist > 1300 and dist < 2500 then
       set lastcaptainx = GetLocationX(ally_loc)
       set lastcaptainy = GetLocationY(ally_loc)
-      //call SetCaptainHome(, lastcaptainx, lastcaptainy)
       if true or CaptainAtGoal() or attack_length_counter == 0 or CaptainInCombat(true) or ally_override or c_ally_total == 0 then
-        call AttackMoveXY(R2I(GetLocationX(ally_loc)), R2I(GetLocationY(ally_loc))) 
+        call AttackMoveXY(R2I(GetLocationX(ally_loc)), R2I(GetLocationY(ally_loc)))
       elseif (c_ally_total > 0 and not ally_override) then
-        call CaptainAttack(GetLocationX(ally_loc), GetLocationY(ally_loc)) // Override and help nearby ally
+        call CaptainAttack(GetLocationX(ally_loc), GetLocationY(ally_loc))
       endif
       call CreateDebugTagLoc("Reform near ally", 10, GetLocationX(ally_loc), GetLocationY(ally_loc), 1.00, 0.80)
     else
       set ally_target = I2U(GetStoredInteger(amaiCache, Int2Str(ALLIANCE_TARGET), "0"))
-      // We now control ally, only certain attack operations will let AMAI join around a shared ally target
       if (ally_override and c_ally_total > 0 and ally_target != null and ally_target != target) then
         set target = ally_target
       endif
       set lastcaptainx = GetUnitX(target)
-      set lastcaptainy = GetUnitY(target)  
+      set lastcaptainy = GetUnitY(target)
       if true or CaptainAtGoal() or (attack_length_counter == 0 and not CaptainInCombat(true)) or CaptainInCombat(true) or ally_override or c_ally_total == 0 then
-        call AttackMoveKill(target) // use attack length counter to do an ocassional attack move incase enemies nearby
-      elseif (c_ally_total > 0 and not ally_override) then // CURRENTLY DISABLED AS FIGHTS WITH ABOVE, NEED NEW COMBAT ATTACK MOVE FUNCTION
-        call CaptainAttack(GetUnitX(target), GetUnitY(target)) // Override hardcoded logic from attackmovekill which will help allies, but this is not an attack move operation
-      endif  
-      // Below is old style alliance but this overrides all hardcoded attacks whether you want it to or not
-      //if (GetAllianceTarget() == target) then
-      //  call AttackMoveKill(target)
-      //else 
-      //  call AttackMoveXY(R2I(lastcaptainx), R2I(lastcaptainy)) // Override and ignore the alliance target
-      //endif
+        call AttackMoveKill(target)
+      elseif (c_ally_total > 0 and not ally_override) then
+        call CaptainAttack(GetUnitX(target), GetUnitY(target))
+      endif
       if (c_ally_total > 0 and ally_target == target) then
         call CreateDebugTag("Reform until ally dead", 10, target, 1.00, 0.80)
       else
@@ -12798,10 +12779,10 @@ function CommonSleepUntilTargetDeadAM takes unit target, boolean iscreeping, boo
     if desperation_assault and attack_length_counter > attack_reform_length * 10 then
       call DesperationAssault()
       set attack_length_counter = 0
-    else 
+    else
       set attack_length_counter = attack_length_counter + 1
     endif
-    if not desperation_assault and reform then // Do not bother reforming in desperation mode, full attack speed
+    if not desperation_assault and reform then
       if CaptainInCombat(true) then
         set combat_length_counter = combat_length_counter + 1
       else
@@ -12810,16 +12791,14 @@ function CommonSleepUntilTargetDeadAM takes unit target, boolean iscreeping, boo
       endif
       if CaptainInCombat(true) and combat_length_counter > attack_reform_length then
         set combat_length_counter = 0
-        call FormGroupAM(0) // Safe in combat as reinforces while fight is ongoing
-      elseif not CaptainInCombat(true) and attack_length_counter > R2I(LinearInterpolation(30, 80, attack_reform_length, attack_reform_length * 10, FoodUsed())+0.5) then // If a large army generally don't want to wait for reinforcements, so only reform occasionally
+        call FormGroupAM(0)
+      elseif not CaptainInCombat(true) and attack_length_counter > R2I(LinearInterpolation(30, 80, attack_reform_length, attack_reform_length * 10, FoodUsed())+0.5) then
         set attack_length_counter = 0
-        set combat_length_counter = 0 
-        //call TraceAll("Reform army")
+        set combat_length_counter = 0
         call FormGroupAM(1)
       endif
     endif
   endloop
-  //set g = null
 endfunction
 
 //============================================================================
@@ -13115,16 +13094,20 @@ function AttackMoveTowerRush takes nothing returns nothing
 	local unit mine = null
 	local unit u = null
 	local unit au = builder[10]
+	local integer opCounter = 0
 	set break_attack = false
   set attack_running = true
   call Trace("AttackMoveTowerRush: started; enemy_point_x=" + Int2Str(x) + " y=" + Int2Str(y) + " rushedplayer=" + Int2Str(GetPlayerId(rushedplayer)))
   loop
-    // If we still haven't enabled the tower-attack group, do small creeping
-    // runs so the AI doesn't sit idle while waiting for TOWER_RUSH conditions.
+    set opCounter = opCounter + 1
+    if opCounter > 2000 then
+        call TriggerSleepAction(0.0)
+        set opCounter = 0
+    endif
 		exitwhen not towerrush
 		exitwhen town_threatened and most_threatened_town >= 0 and town_threat[most_threatened_town] >= threat
 		exitwhen break_attack and not teleporting
-		exitwhen CaptainIsEmpty()  // all units died
+		exitwhen CaptainIsEmpty()
 		if tower_attack_run != true and (GetUnitCountDone(old_id[hero[1]]) + GetUnitCountDone(old_id[hero[2]]) + GetUnitCountDone(old_id[hero[3]])) > 0 and (race_tower_item_must != true or (race_tower_item_must == true and (builder[0] != null or tower_used_item))) then
 			set tower_attack_run = true
 			set attack_running = true
@@ -13137,38 +13120,9 @@ function AttackMoveTowerRush takes nothing returns nothing
     elseif tower_attack_run != true then
       set attack_length_counter = attack_length_counter + 1
       if ModuloInteger(attack_length_counter,attack_reform_length*2) == 0 then
-        call FormGroupAM(0)  // Form to be ready but do not attack
+        call FormGroupAM(0)
       endif
 		elseif tower_attack_run then
-			//if take_exp and GetMinesOwned() < 2 and (mine == null or CheckExpansionTaken(mine)) then
-			//	loop
-			//		exitwhen i >= expansion_list_length
-			//		if GetResourceAmount(expansion_list[i]) > 0 and not CheckExpansionTaken(expansion_list[i]) then
-			//			set d = DistanceBetweenPoints_dk(GetUnitLoc(expansion_list[i]), l)
-			//			if d < md then
-			//				set md = d
-			//				set mine = expansion_list[i]
-			//				set exp = i
-			//			endif
-			//		endif
-			//		set i = i + 1
-			//	endloop
-			//	if mine != null then
-			//		set current_expansion_iswater = false
-			//		set current_expansion = mine
-			//		set current_expansion_creeps = exp
-			//		set u = GetExpFoe(mine)
-			//	endif
-			//	set i = 0
-			//endif
-			//if mine != null and u != null and GetPlayerStrength(rushedplayer) < 3 then
-			//	call CreateDebugTag("TRush: take mine", 10, u, 4.00, 2.00)
-			//	call Trace("TR : take mine" )
-			//	call FormGroupAM(0)
-			//	call AttackMoveKillCreep(u, false)
-			//	call ClearCaptainTargets()
-			//	set u = null
-			//endif
 			if not town_threatened then
 				if builder[10] == null or not UnitAlive(builder[10]) then
 					call GroupEnumUnitsInRange(g, enemy_point_x, enemy_point_y, 1200, null)
@@ -13186,7 +13140,6 @@ function AttackMoveTowerRush takes nothing returns nothing
 					call SetAllianceTargetIfLead(builder[10])
 				endif
 			endif
-      // Strength-based attack termination: let the attack controller decide when to break
       if not town_threatened and enemy_point_x != 0 and enemy_point_y != 0 then
         set EnemyStrength = GetLocationNonCreepStrength(enemy_point_x, enemy_point_y, 1200) + GetLocationTowerStrength(enemy_point_x, enemy_point_y, 1200)
         set OwnStrength = GetOwnStrength()
@@ -13197,7 +13150,7 @@ function AttackMoveTowerRush takes nothing returns nothing
       endif
 			if towers_built < 4 then
 				if tower_peon_inplace then
-					if towers_built_count + force_number - 1 > 35 and towers_built < 2 then  //Prevent cannot build tower , but Enemy army is weak (maybe have ally attack), and AI not attack Enemy home
+					if towers_built_count + force_number - 1 > 35 and towers_built < 2 then
 						call AttackMoveXY(R2I((x + first_tower_point_x) / 3),R2I((y + first_tower_point_y) / 3))
 					elseif towers_built_count + force_number - 1 > 50 and towers_built < 2 then
 						call AttackMoveXY(x,y)
@@ -13212,7 +13165,7 @@ function AttackMoveTowerRush takes nothing returns nothing
 						set g = SelectByAlive(g, true)
 						set g = SelectByHidden(g,false)
 					endif
-					set u = FirstOfGroup(g)  // Ensure always give U a value
+					set u = FirstOfGroup(g)
 					if u != null then
 						call AttackMoveXY(R2I(GetUnitX(u)),R2I(GetUnitY(u)))
 					elseif builder[1] != null and UnitAlive(builder[1]) then
@@ -13267,9 +13220,15 @@ endfunction
 
 //============================================================================
 function QueueAttackMoveXY takes integer x, integer y returns nothing
+  local integer opCounter = 0
   set attack_running = true
   call DoAttackJobs()
   loop
+    set opCounter = opCounter + 1
+    if opCounter > 2000 then
+        call TriggerSleepAction(0.0)
+        set opCounter = 0
+    endif
     call Sleep(sleep_multiplier)
     call AttackMoveXY(x,y)
     exitwhen break_attack
@@ -14668,8 +14627,6 @@ function BuildDefendersAM takes integer prio returns nothing
     set index = index + 1
   endloop
 endfunction
-
-
 
 //_________________________________________________________________________________________________________________________________________________
 //AMAI VS AI Support
