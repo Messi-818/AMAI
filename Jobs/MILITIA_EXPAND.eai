@@ -66,9 +66,9 @@ local boolean buildend = false
 		call Trace("Expansion Distance: " + Int2Str(R2I(GetExpansionDistance())))
 		set expansionstrength = GetExpansionStrength()
 		//if GetExpansionDistance() <= 6600 and expansionstrength < 20 then //and militia_time_count < militia_time_out then //and expansionstrength < 36 then // and hero[1] == racial_militiahero then
-		if GetExpansionDistance() <= 5800 and expansionstrength < 20 then
+		if GetExpansionDistance() <= 10000 and expansionstrength < 20 then
 			call Trace("Our Strength:" + Int2Str(ownstrength) + " Expansion Strength:" + Int2Str(expansionstrength))
-			if TownCountDone(hero[1])>0 and not town_threatened and GetPlayerStrength(ai_player) >= minimum_attack_strength and TownCountDone(racial_peon) > 6 and ownstrength + 6 >= expansionstrength then
+			if TownCountDone(hero[1])>0 and not town_threatened and GetPlayerStrength(ai_player) >= minimum_attack_strength and TownCountDone(racial_peon) > 6 and ownstrength + 15 >= expansionstrength then
 				set gold_buffer = GetUnitGoldCost2(racial_expansion)
 				set wood_buffer = GetUnitWoodCost2(racial_expansion)	
 				set militia_expansion = current_expansion 
